@@ -7,7 +7,7 @@
 use bsp::entry;
 use defmt::*;
 use defmt_rtt as _;
-use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::digital::v2::{OutputPin, StatefulOutputPin};
 use panic_probe as _;
 
 // Provide an alias for our BSP so we can switch targets quickly.
@@ -53,14 +53,16 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    let mut led_pin = pins.led.into_push_pull_output();
-
+    let mut ext_pin = pins.gpio11.into_push_pull_output();
+    ext_pin.set_low().unwrap();
+    let mut a = 0;
     loop {
-        info!("on!");
-        led_pin.set_high().unwrap();
-        delay.delay_ms(500);
-        info!("off!");
-        led_pin.set_low().unwrap();
+        a += 1;
+        match ext_pin.is_set_high().unwrap() {
+            true => ext_pin.set_low().unwrap(),
+            false => ext_pin.set_high().unwrap(),
+        }
+        info!("toggled! {}", a);
         delay.delay_ms(500);
     }
 }
